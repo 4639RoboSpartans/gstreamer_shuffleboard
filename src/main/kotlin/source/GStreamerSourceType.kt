@@ -1,0 +1,70 @@
+package source
+
+import edu.wpi.first.shuffleboard.api.data.DataType
+import edu.wpi.first.shuffleboard.api.data.DataTypes
+import edu.wpi.first.shuffleboard.api.sources.SourceType
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
+import javafx.collections.ObservableMap
+import java.util.HashMap
+import data.GStreamerData
+import data.GStreamerDataType
+import edu.wpi.first.networktables.NetworkTable
+import edu.wpi.first.networktables.NetworkTableInstance
+import edu.wpi.first.shuffleboard.api.util.FxUtils
+import edu.wpi.first.shuffleboard.plugin.networktables.util.NetworkTableUtils
+import edu.wpi.first.shuffleboard.api.sources.recording.TimestampedData
+
+object GStreamerSourceType : SourceType("GStreamer", false, "rtsp://", { null }) {
+    init {
+        NetworkTableInstance.getDefault().addEntryListener("/GStreams", { entryNotification ->
+            FxUtils.runOnFxThread {
+                val hierarchy = NetworkTable.getHierarchy(entryNotification.name)
+                // 0 is "/", 1 is "/CameraPublisher", 2 is "/GStreams/<name>"
+                val name = NetworkTable.basenameKey(hierarchy[2])
+                val uri = toUri(name)
+                val table = NetworkTableInstance.getDefault().getTable(hierarchy[2])
+                if (table.keys.isEmpty() && table.subTables.isEmpty()) {
+                    availableUris.remove(uri)
+                    availableSources.remove(uri)
+                } else if (!NetworkTableUtils.isDelete(entryNotification.flags)) {
+                    if (!availableUris.contains(uri)) {
+                        availableUris.add(uri)
+                    }
+                    availableSources[uri] = GStreamerDataType.defaultValue
+                }
+            }
+        }, 0xFF)
+    }
+    private val sources = HashMap<String, GStreamerSource>()
+    private val availableUris = FXCollections.observableArrayList<String>()
+    private val availableSources: ObservableMap<String, Any> = FXCollections.observableHashMap<String, Any>()
+
+    override fun getAvailableSources(): ObservableMap<String, Any> = availableSources
+    override fun getAvailableSourceUris(): ObservableList<String> = availableUris
+
+    override fun dataTypeForSource(registry: DataTypes?, sourceUri: String?): DataType<GStreamerData> = GStreamerDataType
+
+    fun forName(name: String): GStreamerSource = sources.computeIfAbsent(name, ::GStreamerSource)
+    fun removeSource(source: GStreamerSource) = sources.remove(source.name)
+
+    override fun read(recordedData: TimestampedData) {
+        super.read(recordedData)
+        val source = forUri(recordedData.sourceId) as GStreamerSource
+        source.data = recordedData.data as GStreamerData
+    }
+
+    override fun connect() {
+        super.connect()
+        sources.values.forEach(GStreamerSource::connect)
+    }
+
+    override fun disconnect() {
+        sources.values.forEach(GStreamerSource::disconnect)
+        super.disconnect()
+    }
+
+    override fun createSourceEntryForUri(uri: String): GStreamerSourceEntry {
+        return GStreamerSourceEntry(removeProtocol(uri))
+    }
+}
