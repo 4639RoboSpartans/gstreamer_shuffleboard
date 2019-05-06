@@ -2,31 +2,32 @@ package widget;
 
 import data.GStreamerData;
 import edu.wpi.first.shuffleboard.api.prefs.Group;
+import edu.wpi.first.shuffleboard.api.util.FxUtils;
 import edu.wpi.first.shuffleboard.api.widget.Description;
 import edu.wpi.first.shuffleboard.api.widget.ParametrizedController;
 import edu.wpi.first.shuffleboard.api.widget.SimpleAnnotatedWidget;
 import edu.wpi.first.shuffleboard.api.prefs.Setting;
 
 import com.google.common.collect.ImmutableList;
-import org.fxmisc.easybind.EasyBind;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import org.fxmisc.easybind.EasyBind;
 
 import java.util.List;
 
-@Description(name = "Camera Stream", dataTypes = GStreamerData.class)
+@Description(name = "GStreamer", dataTypes = GStreamerData.class)
 @ParametrizedController("GStreamerWidget.fxml")
 public class GStreamerWidget extends SimpleAnnotatedWidget<GStreamerData> {
-
   @FXML
   private Pane root;
   @FXML
@@ -46,6 +47,12 @@ public class GStreamerWidget extends SimpleAnnotatedWidget<GStreamerData> {
 
   @FXML
   private void initialize() {
+    imageView.imageProperty().bind(EasyBind.map(dataOrDefault, n-> {
+      if(n.getImage().getHeight() == 1 && n.getImage().getWidth() == 1) {
+        return emptyImage;
+      }
+      return SwingFXUtils.toFXImage(n.getImage(), null);
+    }));
   }
 
   @Override

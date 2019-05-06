@@ -7,7 +7,7 @@ import java.util.function.Function
 
 object GStreamerDataType : ComplexDataType<GStreamerData>("Ffmpeg", GStreamerData::class.java) {
     override fun getDefaultValue(): GStreamerData {
-        return GStreamerData("Default", BufferedImage(0, 0, IndexColorModel.OPAQUE))
+        return GStreamerData("Default", BufferedImage(1, 1, IndexColorModel.OPAQUE))
     }
 
     override fun fromMap(): Function<MutableMap<String, Any>, GStreamerData> =

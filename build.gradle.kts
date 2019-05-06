@@ -1,10 +1,12 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    java
+    application
     kotlin("jvm") version "1.3.31"
     id("org.openjfx.javafxplugin") version "0.0.7"
     id("com.diffplug.gradle.spotless") version "3.14.0"
+    id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
 version = "0.0.0"
@@ -18,8 +20,8 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("edu.wpi.first.shuffleboard", "api", "2019.4.1")
-    implementation("edu.wpi.first.shuffleboard.plugin", "networktables", "2019.4.1")
+    compileOnly("edu.wpi.first.shuffleboard", "api", "2019.4.1")
+    compileOnly("edu.wpi.first.shuffleboard.plugin", "networktables", "2019.4.1")
 
     implementation("net.java.dev.jna", "jna-platform", "5.3.1")
     implementation("org.freedesktop.gstreamer", "gst1-java-core", "1.0.0")
@@ -54,4 +56,16 @@ tasks.withType<KotlinCompile> {
 }
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+tasks.withType<Wrapper> {
+    gradleVersion = "5.4.1"
+}
+application {
+    mainClassName = "A"
+}
+tasks.withType<ShadowJar> {
+    archiveClassifier.set("")
+    dependencies {
+        exclude(dependency("org.openjfx::"))
+    }
 }
