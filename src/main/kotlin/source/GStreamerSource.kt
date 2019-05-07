@@ -11,13 +11,10 @@ import java.nio.IntBuffer
 import java.util.concurrent.locks.ReentrantLock
 
 import org.freedesktop.gstreamer.elements.AppSink
-import java.nio.ByteOrder
-import org.freedesktop.gstreamer.Caps
 import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.PlayBin
 import edu.wpi.first.networktables.NetworkTableInstance
 import javafx.beans.value.ChangeListener
-import edu.wpi.first.shuffleboard.api.DashboardMode
 
 class GStreamerSource
 constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType) {

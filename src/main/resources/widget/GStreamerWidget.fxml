@@ -1,26 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import edu.wpi.first.shuffleboard.api.components.ResizableImageView?>
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Line?>
 <VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="widget.GStreamerWidget"
-      fx:id="root"
-      alignment="CENTER"
-      minWidth="300" minHeight="300">
-    <StackPane fx:id="imageContainer" VBox.vgrow="ALWAYS">
-        <ResizableImageView fx:id="imageView" preserveRatio="true"/>
-        <Pane fx:id="crosshairs" visible="${controller.showCrosshair}" StackPane.alignment="CENTER" maxWidth="-Infinity" maxHeight="-Infinity">
-            <Line startX="0" endX="${imageView.boundsInParent.width}" startY="${imageView.boundsInParent.height / 2}" endY="${imageView.boundsInParent.height / 2}" stroke="${controller.crosshairColor}" strokeDashArray="4, 4"/>
-            <Line startX="${imageView.boundsInParent.width / 2}" endX="${imageView.boundsInParent.width / 2}" startY="0" endY="${imageView.boundsInParent.height}" stroke="${controller.crosshairColor}" strokeDashArray="4, 4"/>
-        </Pane>
-    </StackPane>
-    <fx:define>
-        <Image fx:id="emptyImage" url="/black_square.jpg"/>
-    </fx:define>
+	xmlns:fx="http://javafx.com/fxml"
+	fx:controller="widget.GStreamerWidget" fx:id="root" alignment="CENTER"
+	minWidth="300" minHeight="300">
+	<StackPane fx:id="imageContainer" VBox.vgrow="ALWAYS">
+		<ResizableImageView fx:id="imageView"
+			preserveRatio="true" />
+		<Pane fx:id="crosshairs" visible="${controller.showCrosshair}"
+			StackPane.alignment="CENTER" maxWidth="-Infinity"
+			maxHeight="-Infinity">
+			<Line endX="${imageView.boundsInParent.width}"
+				startY="${imageView.boundsInParent.height / 2}"
+				endY="${imageView.boundsInParent.height / 2}"
+				stroke="${controller.crosshairColor}" strokeDashArray="4, 4" />
+			<Line startX="${imageView.boundsInParent.width / 2}"
+				endX="${imageView.boundsInParent.width / 2}"
+				endY="${imageView.boundsInParent.height}"
+				stroke="${controller.crosshairColor}" strokeDashArray="4, 4" />
+		</Pane>
+	</StackPane>
+	<fx:define>
+		<Image fx:id="emptyImage" url="/black_square.jpg" />
+	</fx:define>
 </VBox>

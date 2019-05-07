@@ -1,3 +1,4 @@
+import com.diffplug.spotless.extra.wtp.EclipseWtpFormatterStep
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -5,7 +6,7 @@ plugins {
     application
     kotlin("jvm") version "1.3.31"
     id("org.openjfx.javafxplugin") version "0.0.7"
-    id("com.diffplug.gradle.spotless") version "3.14.0"
+    id("com.diffplug.gradle.spotless") version "3.23.0"
     id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
@@ -45,6 +46,13 @@ spotless {
         trimTrailingWhitespace()
         indentWithSpaces()
         endWithNewline()
+    }
+    format("xml") {
+        target(fileTree(".") {
+            include("**/*.xml", "**/*.fxml")
+            exclude("**/build/**")
+        })
+        eclipseWtp(EclipseWtpFormatterStep.XML)
     }
 }
 
