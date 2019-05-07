@@ -24,7 +24,6 @@ class GStreamerPlugin : Plugin() {
         val k32 = Kernel32.INSTANCE
         val path = System.getenv("path")
         k32.SetEnvironmentVariable("path", "$jarDir\\gstreamer_bins\\bin${if (path == null || path.isBlank()) "" else File.pathSeparator + path.trim()}")
-        println(k32.GetEnvironmentStrings())
         Gst.init("GStreamerPlugin", "")
     }
 

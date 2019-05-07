@@ -48,7 +48,7 @@ public class GStreamerWidget extends SimpleAnnotatedWidget<GStreamerData> {
   @FXML
   private void initialize() {
     imageView.imageProperty().bind(EasyBind.map(dataOrDefault, n-> {
-      if(n.getImage().getHeight() == 1 && n.getImage().getWidth() == 1) {
+      if(n.getImage() == null) {
         return emptyImage;
       }
       return SwingFXUtils.toFXImage(n.getImage(), null);

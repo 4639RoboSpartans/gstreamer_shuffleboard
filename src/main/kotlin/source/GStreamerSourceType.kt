@@ -11,16 +11,18 @@ import data.GStreamerData
 import data.GStreamerDataType
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableInstance
+import edu.wpi.first.shuffleboard.api.sources.UiHints
 import edu.wpi.first.shuffleboard.api.util.FxUtils
 import edu.wpi.first.shuffleboard.plugin.networktables.util.NetworkTableUtils
 import edu.wpi.first.shuffleboard.api.sources.recording.TimestampedData
 
-object GStreamerSourceType : SourceType("GStreamer", false, "rtsp://", { null }) {
+@UiHints(showConnectionIndicator = false)
+object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStreamerSourceType::forName) {
     init {
-        NetworkTableInstance.getDefault().addEntryListener("/GStreams", { entryNotification ->
+        NetworkTableInstance.getDefault().addEntryListener("/CameraPublisher", { entryNotification ->
             FxUtils.runOnFxThread {
                 val hierarchy = NetworkTable.getHierarchy(entryNotification.name)
-                // 0 is "/", 1 is "/CameraPublisher", 2 is "/GStreams/<name>"
+                // 0 is "/", 1 is "/GStreams", 2 is "/GStreams/<name>"
                 val name = NetworkTable.basenameKey(hierarchy[2])
                 val uri = toUri(name)
                 val table = NetworkTableInstance.getDefault().getTable(hierarchy[2])
@@ -64,7 +66,6 @@ object GStreamerSourceType : SourceType("GStreamer", false, "rtsp://", { null })
         super.disconnect()
     }
 
-    override fun createSourceEntryForUri(uri: String): GStreamerSourceEntry {
-        return GStreamerSourceEntry(removeProtocol(uri))
-    }
+    override fun createSourceEntryForUri(uri: String): GStreamerSourceEntry =
+            GStreamerSourceEntry(removeProtocol(uri))
 }
