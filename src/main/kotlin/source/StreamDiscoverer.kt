@@ -1,17 +1,14 @@
 package source
 
-import edu.wpi.first.shuffleboard.api.properties.AsyncProperty
-import edu.wpi.first.shuffleboard.api.util.BitUtils
-
 import edu.wpi.first.networktables.EntryListenerFlags
 import edu.wpi.first.networktables.EntryNotification
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableEntry
 import edu.wpi.first.networktables.NetworkTableType
-
-import java.io.Closeable
-
+import edu.wpi.first.shuffleboard.api.properties.AsyncProperty
+import edu.wpi.first.shuffleboard.api.util.BitUtils
 import javafx.beans.property.ReadOnlyProperty
+import java.io.Closeable
 
 class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Closeable {
     private val streams: NetworkTableEntry
@@ -39,7 +36,7 @@ class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Close
             urlsProperty.setValue(emptyStringArray)
         } else {
             val arr = notification.getEntry().getStringArray(emptyStringArray)
-            urlsProperty.setValue(removeCameraProtocols(*arr))
+            urlsProperty.setValue(arr)
         }
     }
 
@@ -47,12 +44,5 @@ class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Close
         private const val STREAMS_KEY = "streams"
         @JvmStatic
         private val emptyStringArray = arrayOf<String>()
-
-        @JvmStatic
-        internal fun removeCameraProtocols(vararg streams: String): Array<String> =
-                streams
-                    .map { url -> url.replaceFirst("^(mjpe?g|ip|usb):".toRegex(), "") }
-                    .map { url -> url.replace("/?action=stream", "/stream.mjpg?") }
-                    .toTypedArray()
     }
 }

@@ -1,5 +1,6 @@
 package source
 
+import com.sun.jna.Pointer
 import data.GStreamerData
 
 import data.GStreamerDataType
@@ -14,11 +15,19 @@ import org.freedesktop.gstreamer.elements.AppSink
 import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.PlayBin
 import edu.wpi.first.networktables.NetworkTableInstance
+import edu.wpi.first.shuffleboard.api.DashboardMode
 import javafx.beans.value.ChangeListener
+import org.freedesktop.gstreamer.Caps
+import org.freedesktop.gstreamer.Element
+import org.freedesktop.gstreamer.lowlevel.GstAPI
+import java.nio.ByteOrder
+import java.util.Arrays
+import org.freedesktop.gstreamer.lowlevel.GObjectAPI
+import java.net.URI
 
 class GStreamerSource
 constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType) {
-    private val publisherTable = NetworkTableInstance.getDefault().getTable("/CameraPublisher")
+    private val publisherTable = NetworkTableInstance.getDefault().getTable("/GStreamer")
     private val videoSink: AppSink = AppSink("GstVideoComponent")
     private val currentImage: BufferedImage?
         get() = getData().image
@@ -44,68 +53,77 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
         if (urls.isEmpty()) {
                 isActive = false
     } else {
+            println(Arrays.toString(urls))
         if (curUrl != urls[0]) {
             playBin?.remove(videoSink)
+            playBin?.stop()
+            videoSink.stop()
             playBin?.close()
             playBin = null
             curUrl = ""
         }
 
         if (playBin == null) {
-            playBin = PlayBin(urls[0])
+            playBin = PlayBin("GStreamerPlayBin", URI(urls[0]))
             curUrl = urls[0]
             playBin!!.set("latency", 0)
             playBin!!.setVideoSink(videoSink)
+            playBin!!.connect("notify::gsource", Any::class.java, null, NothingCallBack())
+            playBin!!.play()
         }
         isActive = true
     }
 }
 
-init {
-    setName(name)
-    setData(GStreamerDataType.defaultValue)
+    init {
+        setName(name)
+        setData(GStreamerDataType.defaultValue)
 
-//    videoSink.set("emit-signals", true)
-//        val listener = AppSinkListener()
-//        videoSink.connect(listener as AppSink.NEW_SAMPLE)
-//        videoSink.connect(listener as AppSink.NEW_PREROLL)
-//        val capsString = StringBuilder("video/x-raw,pixel-aspect-ratio=1/1,")
-//
-//        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-//            capsString.append("format=BGRx")
-//        } else {
-//            capsString.append("format=xRGB")
-//        }
-//        videoSink.caps = Caps(capsString.toString())
-//
+        videoSink.set("emit-signals", true)
+        val listener = AppSinkListener()
+        videoSink.connect(listener as AppSink.NEW_SAMPLE)
+        videoSink.connect(listener as AppSink.NEW_PREROLL)
+        val capsString = StringBuilder("video/x-raw,pixel-aspect-ratio=1/1,")
+
+        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
+            capsString.append("format=BGRx")
+        } else {
+            capsString.append("format=xRGB")
+        }
+        videoSink.caps = Caps(capsString.toString())
+
         streamDiscoverer = StreamDiscoverer(publisherTable, name)
-//        streamDiscoverer.urlsProperty().addListener(urlChangeListener)
-//
-//        val urls = streamDiscoverer.urls
-//        if (urls.isNotEmpty()) {
-//            playBin = PlayBin(urls[0])
-//            curUrl = urls[0]
-//            playBin!!.set("latency", 0)
-//            playBin!!.setVideoSink(videoSink)
-//        }
-//
-//        DashboardMode.currentModeProperty().addListener { _, _, mode ->
-//            if (mode != DashboardMode.PLAYBACK) {
-//                enable()
-//                playBin?.play()
-//            } else {
-//                disable()
-//                playBin?.pause()
-//            }
-//        }
-//
-//        enabled.addListener(enabledListener)
+        streamDiscoverer.urlsProperty().addListener(urlChangeListener)
+
+        val urls = streamDiscoverer.urls
+        if (urls.isNotEmpty()) {
+            playBin = PlayBin("GStreamerPlayBin", URI(urls[0]))
+            curUrl = urls[0]
+            playBin!!.set("latency", 0)
+            playBin!!.setVideoSink(videoSink)
+            playBin!!.connect("notify::gsource", Any::class.java, null, NothingCallBack())
+            playBin!!.play()
+        }
+
+        DashboardMode.currentModeProperty().addListener { _, _, mode ->
+            if (mode != DashboardMode.PLAYBACK) {
+                enable()
+                playBin?.play()
+            } else {
+                disable()
+                playBin?.pause()
+            }
+        }
+
+        enabled.addListener(enabledListener)
     }
 
     override fun getType(): SourceType = GStreamerSourceType
 
     override fun close() {
         playBin?.remove(videoSink)
+        playBin?.stop()
+        videoSink.stop()
         playBin?.close()
         videoSink.close()
         streamDiscoverer.close()
@@ -125,20 +143,8 @@ init {
         streamDiscoverer.urlsProperty().removeListener(urlChangeListener)
     }
 
-    private fun allocateImage(width: Int, height: Int): BufferedImage {
-        if (currentImage != null) {
-            currentImage!!.flush()
-
-            if (currentImage!!.width != width && currentImage!!.height != height) {
-                setData(getData().copy(image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)))
-            }
-            getData().image!!.accelerationPriority = 0.0f
-        } else {
-            setData(getData().copy(image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)))
-        }
-
-        return currentImage!!
-    }
+    private fun allocateImage(width: Int, height: Int): BufferedImage =
+        BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
 
     private inner class AppSinkListener : AppSink.NEW_SAMPLE, AppSink.NEW_PREROLL {
         fun rgbFrame(width: Int, height: Int, rgb: IntBuffer) {
@@ -150,6 +156,7 @@ init {
                 val renderImage = allocateImage(width, height)
                 val pixels = (renderImage.raster.dataBuffer as DataBufferInt).data
                 rgb.get(pixels, 0, width * height)
+                setData(getData().copy(image = renderImage))
             } finally {
                 bufferLock.unlock()
             }
@@ -185,4 +192,8 @@ init {
             return FlowReturn.OK
         }
     }
+}
+
+class NothingCallBack : GstAPI.GstCallback {
+    fun callback(element: Element, spec: GObjectAPI.GParamSpec, user_data: Pointer) {}
 }

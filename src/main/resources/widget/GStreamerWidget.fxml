@@ -9,7 +9,7 @@
 <VBox xmlns="http://javafx.com/javafx"
 	xmlns:fx="http://javafx.com/fxml"
 	fx:controller="widget.GStreamerWidget" fx:id="root" alignment="CENTER"
-	minWidth="300" minHeight="300">
+	minWidth="150" minHeight="150">
 	<StackPane fx:id="imageContainer" VBox.vgrow="ALWAYS">
 		<ResizableImageView fx:id="imageView"
 			preserveRatio="true" />

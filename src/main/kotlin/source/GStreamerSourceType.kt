@@ -19,7 +19,7 @@ import edu.wpi.first.shuffleboard.api.sources.recording.TimestampedData
 @UiHints(showConnectionIndicator = false)
 object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStreamerSourceType::forName) {
     init {
-        NetworkTableInstance.getDefault().addEntryListener("/CameraPublisher", { entryNotification ->
+        NetworkTableInstance.getDefault().addEntryListener("/GStreamer", { entryNotification ->
             FxUtils.runOnFxThread {
                 val hierarchy = NetworkTable.getHierarchy(entryNotification.name)
                 // 0 is "/", 1 is "/GStreams", 2 is "/GStreams/<name>"
