@@ -30,11 +30,11 @@ class GStreamerPlugin : Plugin() {
     override fun getComponents(): List<ComponentType<out Component>> =
         listOf(WidgetType.forAnnotatedWidget(GStreamerWidget::class.java))
 
+    override fun getDefaultComponents(): Map<DataType<out Any>, ComponentType<out Component>> =
+            mapOf(GStreamerDataType to WidgetType.forAnnotatedWidget(GStreamerWidget::class.java))
+
     override fun getSourceTypes(): List<SourceType> =
         listOf(GStreamerSourceType)
-
-    override fun getDefaultComponents(): Map<DataType<out Any>, ComponentType<out Component>> =
-        mapOf(GStreamerDataType to WidgetType.forAnnotatedWidget(GStreamerWidget::class.java))
 
     override fun getDataTypes(): List<DataType<out Any>> =
         listOf(GStreamerDataType)

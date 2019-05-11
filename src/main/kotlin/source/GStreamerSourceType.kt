@@ -1,6 +1,5 @@
 package source
 
-import edu.wpi.first.shuffleboard.api.data.DataType
 import edu.wpi.first.shuffleboard.api.data.DataTypes
 import edu.wpi.first.shuffleboard.api.sources.SourceType
 import javafx.collections.FXCollections
@@ -45,7 +44,7 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
     override fun getAvailableSources(): ObservableMap<String, Any> = availableSources
     override fun getAvailableSourceUris(): ObservableList<String> = availableUris
 
-    override fun dataTypeForSource(registry: DataTypes?, sourceUri: String?): DataType<GStreamerData> = GStreamerDataType
+    override fun dataTypeForSource(registry: DataTypes?, sourceUri: String?): GStreamerDataType = GStreamerDataType
 
     fun forName(name: String): GStreamerSource = sources.computeIfAbsent(name, ::GStreamerSource)
     fun removeSource(source: GStreamerSource) = sources.remove(source.name)

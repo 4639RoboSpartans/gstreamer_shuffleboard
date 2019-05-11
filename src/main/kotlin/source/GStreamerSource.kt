@@ -16,6 +16,7 @@ import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.PlayBin
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.shuffleboard.api.DashboardMode
+import edu.wpi.first.shuffleboard.api.data.DataType
 import javafx.beans.value.ChangeListener
 import org.freedesktop.gstreamer.Caps
 import org.freedesktop.gstreamer.Element
@@ -37,7 +38,7 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
 
     private val streamDiscoverer: StreamDiscoverer
 
-    private var playBin: PlayBin? = null
+    private lateinit var playBin: PlayBin
     private var curUrl: String = ""
     private var streaming: Boolean = false
 
@@ -53,24 +54,20 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
         if (urls.isEmpty()) {
                 isActive = false
     } else {
-            println(Arrays.toString(urls))
-        if (curUrl != urls[0]) {
-            playBin?.remove(videoSink)
-            playBin?.stop()
-            videoSink.stop()
-            playBin?.close()
-            playBin = null
-            curUrl = ""
-        }
-
-        if (playBin == null) {
+        if (!this::playBin.isInitialized) {
             playBin = PlayBin("GStreamerPlayBin", URI(urls[0]))
             curUrl = urls[0]
-            playBin!!.set("latency", 0)
-            playBin!!.setVideoSink(videoSink)
-            playBin!!.connect("notify::gsource", Any::class.java, null, NothingCallBack())
-            playBin!!.play()
+            playBin.set("latency", 0)
+            playBin.setVideoSink(videoSink)
+            playBin.play()
         }
+        if (curUrl != urls[0]) {
+            playBin.stop()
+            playBin.setURI(URI(urls[0]))
+            playBin.play()
+            curUrl = urls[0]
+        }
+
         isActive = true
     }
 }
@@ -99,19 +96,18 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
         if (urls.isNotEmpty()) {
             playBin = PlayBin("GStreamerPlayBin", URI(urls[0]))
             curUrl = urls[0]
-            playBin!!.set("latency", 0)
-            playBin!!.setVideoSink(videoSink)
-            playBin!!.connect("notify::gsource", Any::class.java, null, NothingCallBack())
-            playBin!!.play()
+            playBin.set("latency", 0)
+            playBin.setVideoSink(videoSink)
+            playBin.play()
         }
 
         DashboardMode.currentModeProperty().addListener { _, _, mode ->
             if (mode != DashboardMode.PLAYBACK) {
                 enable()
-                playBin?.play()
+                playBin.play()
             } else {
                 disable()
-                playBin?.pause()
+                playBin.pause()
             }
         }
 
@@ -121,10 +117,10 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
     override fun getType(): SourceType = GStreamerSourceType
 
     override fun close() {
-        playBin?.remove(videoSink)
-        playBin?.stop()
+        playBin.remove(videoSink)
+        playBin.stop()
         videoSink.stop()
-        playBin?.close()
+        playBin.close()
         videoSink.close()
         streamDiscoverer.close()
         enabled.removeListener(enabledListener)
@@ -192,8 +188,4 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
             return FlowReturn.OK
         }
     }
-}
-
-class NothingCallBack : GstAPI.GstCallback {
-    fun callback(element: Element, spec: GObjectAPI.GParamSpec, user_data: Pointer) {}
 }
