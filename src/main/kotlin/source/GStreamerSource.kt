@@ -1,6 +1,5 @@
 package source
 
-import com.sun.jna.Pointer
 import data.GStreamerData
 
 import data.GStreamerDataType
@@ -14,33 +13,31 @@ import java.util.concurrent.locks.ReentrantLock
 import org.freedesktop.gstreamer.elements.AppSink
 import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.PlayBin
-import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.shuffleboard.api.DashboardMode
-import edu.wpi.first.shuffleboard.api.data.DataType
+import edu.wpi.first.shuffleboard.api.properties.AsyncValidatingProperty
+import javafx.beans.property.Property
 import javafx.beans.value.ChangeListener
 import org.freedesktop.gstreamer.Caps
-import org.freedesktop.gstreamer.Element
-import org.freedesktop.gstreamer.lowlevel.GstAPI
-import java.nio.ByteOrder
-import java.util.Arrays
-import org.freedesktop.gstreamer.lowlevel.GObjectAPI
 import java.net.URI
+import java.nio.ByteOrder
 
-class GStreamerSource
-constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType) {
-    private val publisherTable = NetworkTableInstance.getDefault().getTable("/GStreamer")
+class GStreamerSource : AbstractDataSource<GStreamerData> {
+    val uriProperty: Property<URI> = AsyncValidatingProperty<URI>(this, "uriProperty", URI("rtsp:")) {
+        it.scheme == "rtsp"
+    }
+        @JvmName("uriProperty") get
     private val videoSink: AppSink = AppSink("GstVideoComponent")
-    private val currentImage: BufferedImage?
-        get() = getData().image
     private val bufferLock = ReentrantLock()
-
     private val enabled = active.and(connected)
 
-    private val streamDiscoverer: StreamDiscoverer
-
     private lateinit var playBin: PlayBin
-    private var curUrl: String = ""
+    private var uriSource: GStreamerURISource
     private var streaming: Boolean = false
+
+//    private val urlUpdateDebouncer = Debouncer(Runnable {
+//    }, ofMillis(10))
+//
+//    private val cameraUrlUpdater = { _ -> urlUpdateDebouncer.run() }
 
     private val enabledListener: ChangeListener<Boolean> = ChangeListener { _, _, cur ->
         if (cur) {
@@ -50,30 +47,46 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
         }
     }
 
-    private val urlChangeListener: ChangeListener<Array<String>> = ChangeListener { _, _, urls ->
-        if (urls.isEmpty()) {
-                isActive = false
-    } else {
+    private val curURIListener: ChangeListener<URI> = ChangeListener { _, _, uri ->
         if (!this::playBin.isInitialized) {
-            playBin = PlayBin("GStreamerPlayBin", URI(urls[0]))
-            curUrl = urls[0]
+            playBin = PlayBin("GStreamerPlayBin", uri)
+            uriProperty.value = uri
             playBin.set("latency", 0)
             playBin.setVideoSink(videoSink)
             playBin.play()
-        }
-        if (curUrl != urls[0]) {
+        } else if (uriProperty.value != uri) {
             playBin.stop()
-            playBin.setURI(URI(urls[0]))
+            playBin.setURI(uri)
             playBin.play()
-            curUrl = urls[0]
+            uriProperty.value = uri
+        }
+        playBin.setURI(uri)
+    }
+
+    constructor(name: String) : super(GStreamerDataType) {
+        val urlChangeListener: ChangeListener<Array<URI>> = ChangeListener { _, _, urls ->
+            if (urls.isEmpty()) {
+                isActive = false
+            } else {
+                uriProperty.value = urls[0]
+                isActive = true
+            }
         }
 
-        isActive = true
+        setName(name)
+        uriSource = NetworkTablesURISource(name, urlChangeListener)
+
+        if (uriSource.urls.isNotEmpty()) {
+            uriProperty.value = uriSource.urls[0]
+        }
     }
-}
+
+    constructor(uri: URI) : super(GStreamerDataType) {
+        uriSource = EntryURISource(uri)
+        uriProperty.value = uriSource.urls[0]
+    }
 
     init {
-        setName(name)
         setData(GStreamerDataType.defaultValue)
 
         videoSink.set("emit-signals", true)
@@ -88,18 +101,6 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
             capsString.append("format=xRGB")
         }
         videoSink.caps = Caps(capsString.toString())
-
-        streamDiscoverer = StreamDiscoverer(publisherTable, name)
-        streamDiscoverer.urlsProperty().addListener(urlChangeListener)
-
-        val urls = streamDiscoverer.urls
-        if (urls.isNotEmpty()) {
-            playBin = PlayBin("GStreamerPlayBin", URI(urls[0]))
-            curUrl = urls[0]
-            playBin.set("latency", 0)
-            playBin.setVideoSink(videoSink)
-            playBin.play()
-        }
 
         DashboardMode.currentModeProperty().addListener { _, _, mode ->
             if (mode != DashboardMode.PLAYBACK) {
@@ -122,25 +123,25 @@ constructor(name: String) : AbstractDataSource<GStreamerData>(GStreamerDataType)
         videoSink.stop()
         playBin.close()
         videoSink.close()
-        streamDiscoverer.close()
+        (uriSource as? NetworkTablesURISource)?.close()
         enabled.removeListener(enabledListener)
     }
 
     private fun enable() {
-        val streamUrls = streamDiscoverer.urls
+        val streamUrls = uriSource.urls
         isActive = streamUrls.isNotEmpty()
         streaming = true
-        streamDiscoverer.urlsProperty().addListener(urlChangeListener)
+        (uriSource as? NetworkTablesURISource)?.enable()
     }
 
     private fun disable() {
         isActive = false
         streaming = false
-        streamDiscoverer.urlsProperty().removeListener(urlChangeListener)
+        (uriSource as? NetworkTablesURISource)?.disable()
     }
 
     private fun allocateImage(width: Int, height: Int): BufferedImage =
-        BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+            BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
 
     private inner class AppSinkListener : AppSink.NEW_SAMPLE, AppSink.NEW_PREROLL {
         fun rgbFrame(width: Int, height: Int, rgb: IntBuffer) {

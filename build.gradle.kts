@@ -28,6 +28,8 @@ dependencies {
     implementation("net.java.dev.jna", "jna-platform", "5.3.1")
     implementation("org.freedesktop.gstreamer", "gst1-java-core", "1.0.0")
 
+    implementation("org.apache.commons", "commons-lang3", "3.9")
+
     testImplementation("org.junit.jupiter", "junit-jupiter", "5.4.2")
 }
 
@@ -70,7 +72,7 @@ tasks.withType<Wrapper> {
     gradleVersion = "5.4.1"
 }
 application {
-    mainClassName = "A"
+    mainClassName = ""
 }
 tasks.withType<ShadowJar> {
     archiveClassifier.set("")

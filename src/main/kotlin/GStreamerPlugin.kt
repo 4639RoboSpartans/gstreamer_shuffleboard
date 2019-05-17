@@ -8,6 +8,7 @@ import edu.wpi.first.shuffleboard.api.sources.SourceType
 import edu.wpi.first.shuffleboard.api.widget.Component
 import edu.wpi.first.shuffleboard.api.widget.ComponentType
 import edu.wpi.first.shuffleboard.api.widget.WidgetType
+import org.apache.commons.lang3.SystemUtils
 import org.freedesktop.gstreamer.Gst
 import source.GStreamerSourceType
 import widget.GStreamerWidget
@@ -17,14 +18,16 @@ import java.io.File
 @Requires(group = "edu.wpi.first.shuffleboard", name = "NetworkTables", minVersion = "2.2.5")
 class GStreamerPlugin : Plugin() {
     override fun onLoad() {
-        val codeSource = GStreamerPlugin::class.java.protectionDomain.codeSource
-        val jarFile = File(codeSource.location.toURI().path)
-        val jarDir = jarFile.parentFile.path
+        if (SystemUtils.IS_OS_WINDOWS) {
+            val codeSource = GStreamerPlugin::class.java.protectionDomain.codeSource
+            val jarFile = File(codeSource.location.toURI().path)
+            val jarDir = jarFile.parentFile.path
 
-        val k32 = Kernel32.INSTANCE
-        val path = System.getenv("path")
-        val arch = if(System.getProperty("os.arch").contains("64")) "x86_64" else "x86"
-        k32.SetEnvironmentVariable("path", "$jarDir\\$arch\\bin${if (path == null || path.isBlank()) "" else File.pathSeparator + path.trim()}")
+            val k32 = Kernel32.INSTANCE
+            val path = System.getenv("path")
+            val arch = if (SystemUtils.OS_ARCH.contains("64")) "x86_64" else "x86"
+            k32.SetEnvironmentVariable("path", "$jarDir\\$arch\\bin${if (path == null || path.isBlank()) "" else File.pathSeparator + path.trim()}")
+        }
         Gst.init("GStreamerPlugin", "")
     }
 
