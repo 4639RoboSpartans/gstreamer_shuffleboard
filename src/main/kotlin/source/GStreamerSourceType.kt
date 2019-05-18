@@ -50,7 +50,7 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
 
     fun forName(name: String): GStreamerSource = sources.computeIfAbsent(name, ::GStreamerSource)
     fun forURI(uri: URI): GStreamerSource {
-        return if(!uriToSources.containsKey(uri))
+        return if (!uriToSources.containsKey(uri))
             GStreamerSource(uri)
         else
             uriToSources[uri]!!
@@ -63,7 +63,6 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
     }
     fun removeSource(source: GStreamerSource) {
         sources.remove(source.name)
-
     }
 
     override fun read(recordedData: TimestampedData) {

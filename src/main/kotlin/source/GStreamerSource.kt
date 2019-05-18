@@ -23,9 +23,7 @@ import java.net.URI
 import java.nio.ByteOrder
 
 class GStreamerSource : AbstractDataSource<GStreamerData> {
-    val uriProperty: Property<URI> = AsyncValidatingProperty<URI>(this, "uriProperty", URI("rtsp://localhost")) {
-        it.scheme == "rtsp"
-    }
+    val uriProperty: Property<URI> = AsyncValidatingProperty<URI>(this, "uriProperty", URI("rtsp://localhost")) { it.scheme == "rtsp" }
         @JvmName("uriProperty") get
     private val videoSink: AppSink = AppSink("GstVideoComponent")
     private val bufferLock = ReentrantLock()
@@ -34,11 +32,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     private lateinit var playBin: PlayBin
     private var uriSource: GStreamerURISource
     private var streaming: Boolean = false
-
-//    private val urlUpdateDebouncer = Debouncer(Runnable {
-//    }, ofMillis(10))
-//
-//    private val cameraUrlUpdater = { _ -> urlUpdateDebouncer.run() }
 
     private val enabledListener: ChangeListener<Boolean> = ChangeListener { _, _, cur ->
         if (cur) {
