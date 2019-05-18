@@ -29,7 +29,6 @@ class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Close
 
     override fun close() {
         streams.removeListener(listenerHandle)
-        urlsProperty.value = emptyURIArray
     }
 
     private fun updateUrls(notification: EntryNotification) {

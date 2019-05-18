@@ -15,6 +15,7 @@ import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.PlayBin
 import edu.wpi.first.shuffleboard.api.DashboardMode
 import edu.wpi.first.shuffleboard.api.properties.AsyncValidatingProperty
+import edu.wpi.first.shuffleboard.api.sources.Sources
 import javafx.beans.property.Property
 import javafx.beans.value.ChangeListener
 import org.freedesktop.gstreamer.Caps
@@ -22,7 +23,7 @@ import java.net.URI
 import java.nio.ByteOrder
 
 class GStreamerSource : AbstractDataSource<GStreamerData> {
-    val uriProperty: Property<URI> = AsyncValidatingProperty<URI>(this, "uriProperty", URI("rtsp:")) {
+    val uriProperty: Property<URI> = AsyncValidatingProperty<URI>(this, "uriProperty", URI("rtsp://localhost")) {
         it.scheme == "rtsp"
     }
         @JvmName("uriProperty") get
@@ -47,20 +48,24 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
         }
     }
 
-    private val curURIListener: ChangeListener<URI> = ChangeListener { _, _, uri ->
+    private val curURIListener: ChangeListener<URI> = ChangeListener { _, old, uri ->
         if (!this::playBin.isInitialized) {
+            GStreamerSourceType.registerURI(this)
+
             playBin = PlayBin("GStreamerPlayBin", uri)
             uriProperty.value = uri
             playBin.set("latency", 0)
             playBin.setVideoSink(videoSink)
             playBin.play()
-        } else if (uriProperty.value != uri) {
+        } else {
+            GStreamerSourceType.unregisterURI(old)
+            GStreamerSourceType.registerURI(this)
+
             playBin.stop()
             playBin.setURI(uri)
             playBin.play()
             uriProperty.value = uri
         }
-        playBin.setURI(uri)
     }
 
     constructor(name: String) : super(GStreamerDataType) {
@@ -104,30 +109,37 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
 
         DashboardMode.currentModeProperty().addListener { _, _, mode ->
             if (mode != DashboardMode.PLAYBACK) {
-                enable()
-                playBin.play()
-            } else {
                 disable()
                 playBin.pause()
+            } else {
+                enable()
+                playBin.play()
             }
         }
 
         enabled.addListener(enabledListener)
+        uriProperty.addListener(curURIListener)
     }
 
     override fun getType(): SourceType = GStreamerSourceType
 
     override fun close() {
-        playBin.remove(videoSink)
+        isActive = false
         playBin.stop()
+        playBin.remove(videoSink)
         videoSink.stop()
         playBin.close()
         videoSink.close()
         (uriSource as? NetworkTablesURISource)?.close()
         enabled.removeListener(enabledListener)
+
+        GStreamerSourceType.removeSource(this)
+        GStreamerSourceType.unregisterURI(uriProperty.value)
+        Sources.getDefault().unregister(this)
     }
 
     private fun enable() {
+        println("en")
         val streamUrls = uriSource.urls
         isActive = streamUrls.isNotEmpty()
         streaming = true
@@ -135,6 +147,7 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     private fun disable() {
+        println("dis")
         isActive = false
         streaming = false
         (uriSource as? NetworkTablesURISource)?.disable()

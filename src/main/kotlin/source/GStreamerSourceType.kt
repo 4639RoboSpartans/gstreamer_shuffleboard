@@ -14,6 +14,7 @@ import edu.wpi.first.shuffleboard.api.sources.UiHints
 import edu.wpi.first.shuffleboard.api.util.FxUtils
 import edu.wpi.first.shuffleboard.plugin.networktables.util.NetworkTableUtils
 import edu.wpi.first.shuffleboard.api.sources.recording.TimestampedData
+import java.net.URI
 
 @UiHints(showConnectionIndicator = false)
 object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStreamerSourceType::forName) {
@@ -38,8 +39,9 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
         }, 0xFF)
     }
     private val sources = HashMap<String, GStreamerSource>()
+    private val uriToSources = HashMap<URI, GStreamerSource>()
     private val availableUris = FXCollections.observableArrayList<String>()
-    private val availableSources: ObservableMap<String, Any> = FXCollections.observableHashMap<String, Any>()
+    private val availableSources = FXCollections.observableHashMap<String, Any>()
 
     override fun getAvailableSources(): ObservableMap<String, Any> = availableSources
     override fun getAvailableSourceUris(): ObservableList<String> = availableUris
@@ -47,7 +49,22 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
     override fun dataTypeForSource(registry: DataTypes?, sourceUri: String?): GStreamerDataType = GStreamerDataType
 
     fun forName(name: String): GStreamerSource = sources.computeIfAbsent(name, ::GStreamerSource)
-    fun removeSource(source: GStreamerSource) = sources.remove(source.name)
+    fun forURI(uri: URI): GStreamerSource {
+        return if(!uriToSources.containsKey(uri))
+            GStreamerSource(uri)
+        else
+            uriToSources[uri]!!
+    }
+    fun registerURI(source: GStreamerSource) {
+        uriToSources.put(source.uriProperty.value, source)
+    }
+    fun unregisterURI(uri: URI) {
+        uriToSources.remove(uri)
+    }
+    fun removeSource(source: GStreamerSource) {
+        sources.remove(source.name)
+
+    }
 
     override fun read(recordedData: TimestampedData) {
         super.read(recordedData)

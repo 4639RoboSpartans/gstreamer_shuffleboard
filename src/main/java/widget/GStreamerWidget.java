@@ -20,9 +20,12 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import org.fxmisc.easybind.EasyBind;
 import source.GStreamerSource;
+import source.GStreamerSourceType;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Objects;
 
 @Description(name = "GStreamer", dataTypes = GStreamerData.class)
 @ParametrizedController("GStreamerWidget.fxml")
@@ -43,7 +46,7 @@ public class GStreamerWidget extends SimpleAnnotatedWidget<GStreamerData> {
   private final BooleanProperty showControls = new SimpleBooleanProperty(this, "showControls", true);
   private final BooleanProperty showCrosshair = new SimpleBooleanProperty(this, "showCrosshair", true);
   private final Property<Color> crosshairColor = new SimpleObjectProperty<>(this, "crosshairColor", Color.WHITE);
-  private StringProperty uriField = new SimpleStringProperty(this, "uriField", "rtsp:");
+  private StringProperty uriField = new SimpleStringProperty(this, "uriField", "rtsp://localhost");
 
   private final ChangeListener<URI> sourceURIListener =
           (__, ___, val) -> uriField.setValue(val.toASCIIString());
@@ -60,16 +63,39 @@ public class GStreamerWidget extends SimpleAnnotatedWidget<GStreamerData> {
     sourceProperty().addListener((__, old, source) -> {
       if (source instanceof GStreamerSource) {
         GStreamerSource gstSource = (GStreamerSource) source;
+        gstSource.uriProperty().addListener(sourceURIListener);
         if (source.hasClients()) {
           uriField.setValue(gstSource.uriProperty().getValue().toASCIIString());
         }
-        gstSource.uriProperty().addListener(sourceURIListener);
       }
       if (old instanceof GStreamerSource) {
         GStreamerSource gstSource = (GStreamerSource) old;
         gstSource.uriProperty().removeListener(sourceURIListener);
       }
     });
+
+    uriField.addListener((__, ___, source) -> {
+      if(sourceProperty().getValue() instanceof GStreamerSource) {
+        GStreamerSource gst = (GStreamerSource) sourceProperty().getValue();
+
+        if(!Objects.equals(gst.uriProperty().getValue().toASCIIString(), source)) {
+          try {
+            sourceProperty().setValue(GStreamerSourceType.INSTANCE.forURI(new URI(source)));
+          } catch (URISyntaxException ignored) {
+          }
+        }
+      } else {
+        try {
+          sourceProperty().setValue(GStreamerSourceType.INSTANCE.forURI(new URI(source)));
+        } catch (URISyntaxException ignored) {
+        }
+      }
+    });
+
+    if (sourceProperty().getValue() instanceof GStreamerSource) {
+      GStreamerSource gstSource = (GStreamerSource) sourceProperty().getValue();
+      uriField.setValue(gstSource.uriProperty().getValue().toASCIIString());
+    }
   }
 
   @Override
