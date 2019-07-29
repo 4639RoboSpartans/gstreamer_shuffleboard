@@ -1,17 +1,23 @@
 
 import com.diffplug.spotless.extra.wtp.EclipseWtpFormatterStep
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.jvm.tasks.Jar
 
 plugins {
-    application
     kotlin("jvm") version "1.3.31"
-    id("org.openjfx.javafxplugin") version "0.0.7"
-    id("com.diffplug.gradle.spotless") version "3.23.0"
-    id("com.github.johnrengelman.shadow") version "5.0.0"
+    id("org.openjfx.javafxplugin") version "0.0.8"
+    id("com.diffplug.gradle.spotless") version "3.23.1"
 }
 
-version = "0.1.0-beta"
+version = "0.1.1-beta"
+
+buildscript {
+    configurations.classpath {
+        resolutionStrategy {
+            force("org.eclipse.jgit:org.eclipse.jgit:4.9.0.201710071750-r")
+        }
+    }
+}
 
 repositories {
     mavenCentral()
@@ -21,20 +27,19 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
     compileOnly("edu.wpi.first.shuffleboard", "api", "2019.4.1")
     compileOnly("edu.wpi.first.shuffleboard.plugin", "networktables", "2019.4.1")
 
+    implementation(kotlin("stdlib-jdk8"))
     implementation("net.java.dev.jna", "jna-platform", "5.3.1")
     implementation("org.freedesktop.gstreamer", "gst1-java-core", "1.0.0")
-
     implementation("org.apache.commons", "commons-lang3", "3.9")
-
     testImplementation("org.junit.jupiter", "junit-jupiter", "5.4.2")
 }
 
 javafx {
     modules("javafx.controls", "javafx.fxml", "javafx.controls", "javafx.swing")
+    configuration = "compileOnly"
 }
 
 spotless {
@@ -52,7 +57,7 @@ spotless {
     }
     format("xml") {
         target(fileTree(".") {
-            include("**/*.xml", "**/*.fxml")
+            include("**/*.fxml")
             exclude("**/build/**")
         })
         eclipseWtp(EclipseWtpFormatterStep.XML)
@@ -62,21 +67,23 @@ spotless {
 configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_11
 }
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
+
+val fatJar = task("fatJar", type = Jar::class) {
+    group = "build"
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    exclude("META-INF/*")
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get() as CopySpec)
 }
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
-tasks.withType<Wrapper> {
-    gradleVersion = "5.4.1"
-}
-application {
-    mainClassName = ""
-}
-tasks.withType<ShadowJar> {
-    archiveClassifier.set("")
-    dependencies {
-        exclude(dependency("org.openjfx::"))
+
+tasks {
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "11"
+    }
+    withType<Test> {
+        useJUnitPlatform()
+    }
+    withType<Wrapper> {
+        gradleVersion = "5.5.1"
     }
 }

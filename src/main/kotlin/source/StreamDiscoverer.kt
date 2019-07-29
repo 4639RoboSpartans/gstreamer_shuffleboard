@@ -14,7 +14,7 @@ import java.net.URI
 class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Closeable {
     private val streams: NetworkTableEntry
 
-    private val urlsProperty = AsyncProperty<Array<URI>>(this, "urlsProperty", emptyURIArray)
+    private val urlsProperty = AsyncProperty(this, "urlsProperty", emptyURIArray)
     private val listenerHandle: Int
 
     val urls: Array<URI>

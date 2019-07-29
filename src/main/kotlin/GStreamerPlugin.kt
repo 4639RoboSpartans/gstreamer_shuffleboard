@@ -14,7 +14,7 @@ import source.GStreamerSourceType
 import widget.GStreamerWidget
 import java.io.File
 
-@Description(group = "homebrew", name = "GStreamer Plugin", version = "0.0.0", summary = "GStreamer in Shuffleboard")
+@Description(group = "homebrew", name = "GStreamer Plugin", version = "0.1.1", summary = "GStreamer in Shuffleboard")
 @Requires(group = "edu.wpi.first.shuffleboard", name = "NetworkTables", minVersion = "2.2.5")
 class GStreamerPlugin : Plugin() {
     override fun onLoad() {
@@ -27,7 +27,6 @@ class GStreamerPlugin : Plugin() {
             val path = System.getenv("path")
             val arch = if (System.getProperty("os.arch").contains("64")) "x86_64" else "x86"
             k32.SetEnvironmentVariable("path", "$jarDir\\$arch\\bin${if (path == null || path.isBlank()) "" else File.pathSeparator + path.trim()}")
-            println("$jarDir\\$arch\\bin")
         }
         Gst.init("GStreamerPlugin", "")
     }

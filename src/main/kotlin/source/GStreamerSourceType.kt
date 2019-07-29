@@ -56,7 +56,7 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
             uriToSources[uri]!!
     }
     fun registerURI(source: GStreamerSource) {
-        uriToSources.put(source.uriProperty.value, source)
+        uriToSources[source.uriProperty.value] = source
     }
     fun unregisterURI(uri: URI) {
         uriToSources.remove(uri)

@@ -9,6 +9,6 @@ object GStreamerDataType : ComplexDataType<GStreamerData>("GStreamer", GStreamer
         return GStreamerData("Default", null)
     }
 
-    override fun fromMap(): Function<MutableMap<String, Any>, GStreamerData> =
+    override fun fromMap(): Function<Map<String, Any>, GStreamerData> =
             Function { map -> GStreamerData(map["name"] as String, map["image"] as BufferedImage) }
 }

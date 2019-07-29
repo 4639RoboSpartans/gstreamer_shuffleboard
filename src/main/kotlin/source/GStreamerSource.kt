@@ -23,8 +23,11 @@ import java.net.URI
 import java.nio.ByteOrder
 
 class GStreamerSource : AbstractDataSource<GStreamerData> {
-    val uriProperty: Property<URI> = AsyncValidatingProperty<URI>(this, "uriProperty", URI("rtsp://localhost")) { it.scheme == "rtsp" }
+    val uriProperty: Property<URI> = AsyncValidatingProperty(this, "uriProperty", URI("rtsp://localhost")) {
+        it.scheme == "rtsp"
+    }
         @JvmName("uriProperty") get
+
     private val videoSink: AppSink = AppSink("GstVideoComponent")
     private val bufferLock = ReentrantLock()
     private val enabled = active.and(connected)
@@ -132,7 +135,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     private fun enable() {
-        println("en")
         val streamUrls = uriSource.urls
         isActive = streamUrls.isNotEmpty()
         streaming = true
@@ -140,7 +142,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     private fun disable() {
-        println("dis")
         isActive = false
         streaming = false
         (uriSource as? NetworkTablesURISource)?.disable()
