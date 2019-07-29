@@ -77,13 +77,13 @@ val fatJar = task("fatJar", type = Jar::class) {
 }
 
 tasks {
-    withType<KotlinCompile> {
+    withType<KotlinCompile>().configureEach {
         kotlinOptions.jvmTarget = "11"
     }
-    withType<Test> {
+    withType<Test>().configureEach {
         useJUnitPlatform()
     }
-    withType<Wrapper> {
+    withType<Wrapper>().configureEach {
         gradleVersion = "5.5.1"
     }
 }
