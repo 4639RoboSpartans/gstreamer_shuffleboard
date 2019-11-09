@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.jvm.tasks.Jar
 
 plugins {
-    id("com.gradle.build-scan") version "2.1"
     kotlin("jvm") version "1.3.31"
     id("org.openjfx.javafxplugin") version "0.0.8"
     id("com.diffplug.gradle.spotless") version "3.25.0"
@@ -61,7 +60,7 @@ configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_11
 }
 
-val fatJar = task("fatJar", type = Jar::class) {
+val fatJar = task<Jar>("fatJar") {
     group = "build"
     duplicatesStrategy = DuplicatesStrategy.FAIL
     exclude("META-INF/*")
