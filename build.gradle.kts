@@ -4,20 +4,13 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.jvm.tasks.Jar
 
 plugins {
+    id("com.gradle.build-scan") version "2.1"
     kotlin("jvm") version "1.3.31"
     id("org.openjfx.javafxplugin") version "0.0.8"
-    id("com.diffplug.gradle.spotless") version "3.23.1"
+    id("com.diffplug.gradle.spotless") version "3.25.0"
 }
 
 version = "0.1.1-beta"
-
-buildscript {
-    configurations.classpath {
-        resolutionStrategy {
-            force("org.eclipse.jgit:org.eclipse.jgit:4.9.0.201710071750-r")
-        }
-    }
-}
 
 repositories {
     mavenCentral()
