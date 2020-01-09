@@ -7,9 +7,9 @@ import edu.wpi.first.networktables.NetworkTableEntry
 import edu.wpi.first.networktables.NetworkTableType
 import edu.wpi.first.shuffleboard.api.properties.AsyncProperty
 import edu.wpi.first.shuffleboard.api.util.BitUtils
-import javafx.beans.property.ReadOnlyProperty
 import java.io.Closeable
 import java.net.URI
+import javafx.beans.property.ReadOnlyProperty
 
 class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Closeable {
     private val streams: NetworkTableEntry

@@ -1,20 +1,20 @@
 package source
 
-import edu.wpi.first.shuffleboard.api.data.DataTypes
-import edu.wpi.first.shuffleboard.api.sources.SourceType
-import javafx.collections.FXCollections
-import javafx.collections.ObservableList
-import javafx.collections.ObservableMap
-import java.util.HashMap
 import data.GStreamerData
 import data.GStreamerDataType
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableInstance
+import edu.wpi.first.shuffleboard.api.data.DataTypes
+import edu.wpi.first.shuffleboard.api.sources.SourceType
 import edu.wpi.first.shuffleboard.api.sources.UiHints
+import edu.wpi.first.shuffleboard.api.sources.recording.TimestampedData
 import edu.wpi.first.shuffleboard.api.util.FxUtils
 import edu.wpi.first.shuffleboard.plugin.networktables.util.NetworkTableUtils
-import edu.wpi.first.shuffleboard.api.sources.recording.TimestampedData
 import java.net.URI
+import java.util.HashMap
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
+import javafx.collections.ObservableMap
 
 @UiHints(showConnectionIndicator = false)
 object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStreamerSourceType::forName) {
@@ -22,7 +22,7 @@ object GStreamerSourceType : SourceType("GStreamer", false, "gstreamer://", GStr
         NetworkTableInstance.getDefault().addEntryListener("/GStreamer", { entryNotification ->
             FxUtils.runOnFxThread {
                 val hierarchy = NetworkTable.getHierarchy(entryNotification.name)
-                // 0 is "/", 1 is "/GStreams", 2 is "/GStreams/<name>"
+                // 0 is "/", 1 is "/GStreamer", 2 is "/GStreamer/<name>"
                 val name = NetworkTable.basenameKey(hierarchy[2])
                 val uri = toUri(name)
                 val table = NetworkTableInstance.getDefault().getTable(hierarchy[2])

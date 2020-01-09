@@ -1,9 +1,9 @@
 package source
 
 import edu.wpi.first.networktables.NetworkTableInstance
-import javafx.beans.value.ChangeListener
 import java.io.Closeable
 import java.net.URI
+import javafx.beans.value.ChangeListener
 
 sealed class GStreamerURISource {
     abstract val urls: Array<URI>

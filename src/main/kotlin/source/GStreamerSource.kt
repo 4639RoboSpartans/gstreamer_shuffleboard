@@ -1,26 +1,24 @@
 package source
 
 import data.GStreamerData
-
 import data.GStreamerDataType
-import edu.wpi.first.shuffleboard.api.sources.AbstractDataSource
-import edu.wpi.first.shuffleboard.api.sources.SourceType
-import java.awt.image.BufferedImage
-import java.awt.image.DataBufferInt
-import java.nio.IntBuffer
-import java.util.concurrent.locks.ReentrantLock
-
-import org.freedesktop.gstreamer.elements.AppSink
-import org.freedesktop.gstreamer.FlowReturn
-import org.freedesktop.gstreamer.elements.PlayBin
 import edu.wpi.first.shuffleboard.api.DashboardMode
 import edu.wpi.first.shuffleboard.api.properties.AsyncValidatingProperty
+import edu.wpi.first.shuffleboard.api.sources.AbstractDataSource
+import edu.wpi.first.shuffleboard.api.sources.SourceType
 import edu.wpi.first.shuffleboard.api.sources.Sources
+import java.awt.image.BufferedImage
+import java.awt.image.DataBufferInt
+import java.net.URI
+import java.nio.ByteOrder
+import java.nio.IntBuffer
+import java.util.concurrent.locks.ReentrantLock
 import javafx.beans.property.Property
 import javafx.beans.value.ChangeListener
 import org.freedesktop.gstreamer.Caps
-import java.net.URI
-import java.nio.ByteOrder
+import org.freedesktop.gstreamer.FlowReturn
+import org.freedesktop.gstreamer.elements.AppSink
+import org.freedesktop.gstreamer.elements.PlayBin
 
 class GStreamerSource : AbstractDataSource<GStreamerData> {
     val uriProperty: Property<URI> = AsyncValidatingProperty(this, "uriProperty", URI("rtsp://localhost")) {

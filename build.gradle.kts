@@ -1,7 +1,7 @@
 
 import com.diffplug.spotless.extra.wtp.EclipseWtpFormatterStep
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.jvm.tasks.Jar
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.31"
@@ -9,7 +9,7 @@ plugins {
     id("com.diffplug.gradle.spotless") version "3.25.0"
 }
 
-version = "0.1.1-beta"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
