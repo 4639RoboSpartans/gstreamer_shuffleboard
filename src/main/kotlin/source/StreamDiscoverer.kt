@@ -1,12 +1,9 @@
 package source
 
-import edu.wpi.first.networktables.EntryListenerFlags
 import edu.wpi.first.networktables.EntryNotification
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableEntry
-import edu.wpi.first.networktables.NetworkTableType
 import edu.wpi.first.shuffleboard.api.properties.AsyncProperty
-import edu.wpi.first.shuffleboard.api.util.BitUtils
 import java.io.Closeable
 import java.net.URI
 import javafx.beans.property.ReadOnlyProperty
@@ -22,6 +19,10 @@ class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Close
 
     init {
         streams = publisherTable.getSubTable(cameraName).getEntry(STREAMS_KEY)
+
+        val arr = streams.getStringArray(emptyStringArray).map { URI(it) }.toTypedArray()
+        urlsProperty.value = arr
+
         listenerHandle = streams.addListener({ this.updateUrls(it) }, 0xFF)
     }
 
@@ -32,12 +33,8 @@ class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Close
     }
 
     private fun updateUrls(notification: EntryNotification) {
-        if (BitUtils.flagMatches(notification.flags, EntryListenerFlags.kDelete) || notification.getEntry().type != NetworkTableType.kStringArray) {
-            urlsProperty.setValue(emptyURIArray)
-        } else {
-            val arr = notification.getEntry().getStringArray(emptyStringArray).map { URI(it) }.toTypedArray()
-            urlsProperty.setValue(arr)
-        }
+        val arr = notification.getEntry().getStringArray(emptyStringArray).map { URI(it) }.toTypedArray()
+        urlsProperty.value = arr
     }
 
     companion object {

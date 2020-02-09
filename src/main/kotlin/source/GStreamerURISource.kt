@@ -7,6 +7,8 @@ import javafx.beans.value.ChangeListener
 
 sealed class GStreamerURISource {
     abstract val urls: Array<URI>
+    open fun enable() {}
+    open fun disable() {}
 }
 
 class NetworkTablesURISource(name: String, private val changeListener: ChangeListener<Array<URI>>) : GStreamerURISource(), Closeable, AutoCloseable {
@@ -17,14 +19,13 @@ class NetworkTablesURISource(name: String, private val changeListener: ChangeLis
 
     init {
         streamDiscoverer = StreamDiscoverer(publisherTable, name)
+    }
+
+    override fun enable() {
         streamDiscoverer.urlsProperty().addListener(changeListener)
     }
 
-    fun enable() {
-        streamDiscoverer.urlsProperty().addListener(changeListener)
-    }
-
-    fun disable() {
+    override fun disable() {
         streamDiscoverer.urlsProperty().removeListener(changeListener)
     }
 

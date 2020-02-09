@@ -15,6 +15,7 @@ import java.nio.IntBuffer
 import java.util.concurrent.locks.ReentrantLock
 import javafx.beans.property.Property
 import javafx.beans.value.ChangeListener
+import org.freedesktop.gstreamer.Bus
 import org.freedesktop.gstreamer.Caps
 import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.AppSink
@@ -49,6 +50,18 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
             playBin = PlayBin("GStreamerPlayBin", uri)
             uriProperty.value = uri
             playBin.set("latency", 0)
+
+            playBin.bus.connect(Bus.ERROR { _, _, _ ->
+                playBin.stop()
+                playBin.setURI(uri)
+                playBin.play()
+            })
+            playBin.bus.connect(Bus.EOS {
+                playBin.stop()
+                playBin.setURI(uri)
+                playBin.play()
+            })
+
             playBin.setVideoSink(videoSink)
             playBin.play()
         } else {
@@ -104,10 +117,8 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
         DashboardMode.currentModeProperty().addListener { _, _, mode ->
             if (mode != DashboardMode.PLAYBACK) {
                 disable()
-                playBin.pause()
             } else {
                 enable()
-                playBin.play()
             }
         }
 
@@ -137,12 +148,14 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
         isActive = streamUrls.isNotEmpty()
         streaming = true
         (uriSource as? NetworkTablesURISource)?.enable()
+        playBin.play()
     }
 
     private fun disable() {
         isActive = false
         streaming = false
         (uriSource as? NetworkTablesURISource)?.disable()
+        playBin.pause()
     }
 
     private fun allocateImage(width: Int, height: Int): BufferedImage =

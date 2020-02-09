@@ -62,6 +62,7 @@ configure<JavaPluginConvention> {
 
 val fatJar = task<Jar>("fatJar") {
     group = "build"
+    archiveClassifier.set("all")
     duplicatesStrategy = DuplicatesStrategy.FAIL
     exclude("META-INF/*")
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
@@ -69,6 +70,9 @@ val fatJar = task<Jar>("fatJar") {
 }
 
 tasks {
+    named("build") {
+        dependsOn("fatJar")
+    }
     withType<KotlinCompile>().configureEach {
         kotlinOptions.jvmTarget = "11"
     }
