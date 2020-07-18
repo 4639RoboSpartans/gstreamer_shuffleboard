@@ -7,34 +7,46 @@ import edu.wpi.first.shuffleboard.api.properties.AsyncValidatingProperty
 import edu.wpi.first.shuffleboard.api.sources.AbstractDataSource
 import edu.wpi.first.shuffleboard.api.sources.SourceType
 import edu.wpi.first.shuffleboard.api.sources.Sources
+import javafx.beans.property.Property
+import javafx.beans.property.ReadOnlyProperty
+import javafx.beans.value.ChangeListener
+import org.freedesktop.gstreamer.Bus
+import org.freedesktop.gstreamer.Caps
+import org.freedesktop.gstreamer.FlowReturn
+import org.freedesktop.gstreamer.elements.AppSink
+import org.freedesktop.gstreamer.elements.PlayBin
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferInt
 import java.net.URI
 import java.nio.ByteOrder
 import java.nio.IntBuffer
+import java.util.*
 import java.util.concurrent.locks.ReentrantLock
-import javafx.beans.property.Property
-import javafx.beans.value.ChangeListener
-import org.freedesktop.gstreamer.Caps
-import org.freedesktop.gstreamer.FlowReturn
-import org.freedesktop.gstreamer.elements.AppSink
-import org.freedesktop.gstreamer.elements.PlayBin
+
 
 class GStreamerSource : AbstractDataSource<GStreamerData> {
-    val uriProperty: Property<URI> = AsyncValidatingProperty(this, "uriProperty", URI("rtsp://localhost")) {
+    private val uriProperty: Property<URI> = AsyncValidatingProperty(this, "uriProperty", URI("rtsp://localhost")) {
         it.scheme == "rtsp"
     }
-        @JvmName("uriProperty") get
+
+    fun uriProperty(): ReadOnlyProperty<URI> = uriProperty
+    fun asciiRepresentation() = uriSource.let {
+        when (it) {
+            is NetworkTablesURISource -> "NetworkTables ${it.name}"
+            is StaticURISource -> uriProperty.value.toASCIIString()!!
+        }
+    }
 
     private val videoSink: AppSink = AppSink("GstVideoComponent")
     private val bufferLock = ReentrantLock()
     private val enabled = active.and(connected)
 
+
     private lateinit var playBin: PlayBin
     private var uriSource: GStreamerURISource
-    private var streaming: Boolean = false
 
     private val enabledListener: ChangeListener<Boolean> = ChangeListener { _, _, cur ->
+//        println("$cur@@@")
         if (cur) {
             enable()
         } else {
@@ -47,10 +59,32 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
             GStreamerSourceType.registerURI(this)
 
             playBin = PlayBin("GStreamerPlayBin", uri)
-            uriProperty.value = uri
             playBin.set("latency", 0)
+
+//            playBin.bus.connect(Bus.ERROR { _, _, msg ->
+//                println(msg + "ERR")
+//            })
+
+
+            playBin.bus.connect(Bus.ERROR { _, _, msg ->
+                if(msg == "Internal data stream error." || msg == "Could not open resource for reading and writing.") {
+//                    println("$connected hom")
+//                    println("$active hom")
+
+                    isConnected = false
+
+                    Timer(true).schedule(
+                        object : TimerTask() {
+                            override fun run() {
+                                enable()
+                            }
+                        }, 5000)
+
+                }
+            })
+
             playBin.setVideoSink(videoSink)
-            playBin.play()
+            enable()
         } else {
             GStreamerSourceType.unregisterURI(old)
             GStreamerSourceType.registerURI(this)
@@ -58,7 +92,7 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
             playBin.stop()
             playBin.setURI(uri)
             playBin.play()
-            uriProperty.value = uri
+
         }
     }
 
@@ -68,7 +102,7 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
                 isActive = false
             } else {
                 uriProperty.value = urls[0]
-                isActive = true
+                enable()
             }
         }
 
@@ -81,7 +115,7 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     constructor(uri: URI) : super(GStreamerDataType) {
-        uriSource = EntryURISource(uri)
+        uriSource = StaticURISource(uri)
         uriProperty.value = uriSource.urls[0]
     }
 
@@ -119,6 +153,8 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
 
     override fun close() {
         isActive = false
+        isConnected = false
+
         playBin.stop()
         playBin.remove(videoSink)
         videoSink.stop()
@@ -133,23 +169,32 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     private fun enable() {
+//        println("AAA")
+
         val streamUrls = uriSource.urls
-        isActive = streamUrls.isNotEmpty()
-        streaming = true
+        if(streamUrls.isNotEmpty()) {
+//            println("AAAAA")
+
+            isActive = true
+            playBin.play()
+            isConnected = true
+        }
         (uriSource as? NetworkTablesURISource)?.enable()
     }
 
     private fun disable() {
+//        println("BBB")
+
+        playBin.stop()
         isActive = false
-        streaming = false
         (uriSource as? NetworkTablesURISource)?.disable()
     }
 
-    private fun allocateImage(width: Int, height: Int): BufferedImage =
+    private inner class AppSinkListener : AppSink.NEW_SAMPLE, AppSink.NEW_PREROLL {
+        private fun allocateImage(width: Int, height: Int): BufferedImage =
             BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
 
-    private inner class AppSinkListener : AppSink.NEW_SAMPLE, AppSink.NEW_PREROLL {
-        fun rgbFrame(width: Int, height: Int, rgb: IntBuffer) {
+        private fun rgbFrame(width: Int, height: Int, rgb: IntBuffer) {
             if (!bufferLock.tryLock()) {
                 return
             }

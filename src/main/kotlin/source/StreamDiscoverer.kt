@@ -18,14 +18,14 @@ class StreamDiscoverer(publisherTable: NetworkTable, cameraName: String) : Close
     private val listenerHandle: Int
 
     val urls: Array<URI>
-        get() = urlsProperty.get()
+        get() = urlsProperty.get().clone()
+
+    fun urlsProperty(): ReadOnlyProperty<Array<URI>> = urlsProperty
 
     init {
         streams = publisherTable.getSubTable(cameraName).getEntry(STREAMS_KEY)
         listenerHandle = streams.addListener({ this.updateUrls(it) }, 0xFF)
     }
-
-    fun urlsProperty(): ReadOnlyProperty<Array<URI>> = urlsProperty
 
     override fun close() {
         streams.removeListener(listenerHandle)

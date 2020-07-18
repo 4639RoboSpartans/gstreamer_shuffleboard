@@ -9,7 +9,7 @@ sealed class GStreamerURISource {
     abstract val urls: Array<URI>
 }
 
-class NetworkTablesURISource(name: String, private val changeListener: ChangeListener<Array<URI>>) : GStreamerURISource(), Closeable, AutoCloseable {
+class NetworkTablesURISource(public val name: String, private val changeListener: ChangeListener<Array<URI>>) : GStreamerURISource(), Closeable, AutoCloseable {
     override val urls: Array<URI>
         get() = streamDiscoverer.urls
     private val publisherTable = NetworkTableInstance.getDefault().getTable("/GStreamer")
@@ -29,10 +29,11 @@ class NetworkTablesURISource(name: String, private val changeListener: ChangeLis
     }
 
     override fun close() {
+        disable()
         streamDiscoverer.close()
     }
 }
 
-class EntryURISource(url: URI) : GStreamerURISource() {
+class StaticURISource(url: URI) : GStreamerURISource() {
     override val urls = arrayOf(url)
 }
