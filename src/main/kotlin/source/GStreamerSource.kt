@@ -7,6 +7,14 @@ import edu.wpi.first.shuffleboard.api.properties.AsyncValidatingProperty
 import edu.wpi.first.shuffleboard.api.sources.AbstractDataSource
 import edu.wpi.first.shuffleboard.api.sources.SourceType
 import edu.wpi.first.shuffleboard.api.sources.Sources
+import java.awt.image.BufferedImage
+import java.awt.image.DataBufferInt
+import java.net.URI
+import java.nio.ByteOrder
+import java.nio.IntBuffer
+import java.util.Timer
+import java.util.TimerTask
+import java.util.concurrent.locks.ReentrantLock
 import javafx.beans.property.Property
 import javafx.beans.property.ReadOnlyProperty
 import javafx.beans.value.ChangeListener
@@ -15,14 +23,6 @@ import org.freedesktop.gstreamer.Caps
 import org.freedesktop.gstreamer.FlowReturn
 import org.freedesktop.gstreamer.elements.AppSink
 import org.freedesktop.gstreamer.elements.PlayBin
-import java.awt.image.BufferedImage
-import java.awt.image.DataBufferInt
-import java.net.URI
-import java.nio.ByteOrder
-import java.nio.IntBuffer
-import java.util.*
-import java.util.concurrent.locks.ReentrantLock
-
 
 class GStreamerSource : AbstractDataSource<GStreamerData> {
     private val uriProperty: Property<URI> = AsyncValidatingProperty(this, "uriProperty", URI("rtsp://localhost")) {
@@ -40,7 +40,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     private val videoSink: AppSink = AppSink("GstVideoComponent")
     private val bufferLock = ReentrantLock()
     private val enabled = active.and(connected)
-
 
     private lateinit var playBin: PlayBin
     private var uriSource: GStreamerURISource
@@ -61,16 +60,8 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
             playBin = PlayBin("GStreamerPlayBin", uri)
             playBin.set("latency", 0)
 
-//            playBin.bus.connect(Bus.ERROR { _, _, msg ->
-//                println(msg + "ERR")
-//            })
-
-
             playBin.bus.connect(Bus.ERROR { _, _, msg ->
-                if(msg == "Internal data stream error." || msg == "Could not open resource for reading and writing.") {
-//                    println("$connected hom")
-//                    println("$active hom")
-
+                if (msg == "Internal data stream error." || msg == "Could not open resource for reading and writing.") {
                     isConnected = false
 
                     Timer(true).schedule(
@@ -79,7 +70,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
                                 enable()
                             }
                         }, 5000)
-
                 }
             })
 
@@ -92,7 +82,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
             playBin.stop()
             playBin.setURI(uri)
             playBin.play()
-
         }
     }
 
@@ -169,12 +158,8 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     private fun enable() {
-//        println("AAA")
-
         val streamUrls = uriSource.urls
-        if(streamUrls.isNotEmpty()) {
-//            println("AAAAA")
-
+        if (streamUrls.isNotEmpty()) {
             isActive = true
             playBin.play()
             isConnected = true
@@ -183,8 +168,6 @@ class GStreamerSource : AbstractDataSource<GStreamerData> {
     }
 
     private fun disable() {
-//        println("BBB")
-
         playBin.stop()
         isActive = false
         (uriSource as? NetworkTablesURISource)?.disable()

@@ -9,20 +9,13 @@ import edu.wpi.first.shuffleboard.api.widget.ParametrizedController
 import edu.wpi.first.shuffleboard.api.widget.SimpleAnnotatedWidget
 import java.net.URI
 import java.net.URISyntaxException
-import javafx.beans.property.BooleanProperty
-import javafx.beans.property.Property
-import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ChangeListener
-import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils
 import javafx.fxml.FXML
-import javafx.scene.Node
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
 import org.fxmisc.easybind.EasyBind
 import source.GStreamerSource
 import source.GStreamerSourceType.forURI
@@ -38,7 +31,6 @@ class GStreamerWidget : SimpleAnnotatedWidget<GStreamerData>() {
     private lateinit var imageView: ImageView
     @FXML
     private lateinit var emptyImage: Image
-
 
     private val uriField = SimpleStringProperty(this, "uriField")
 
@@ -65,7 +57,7 @@ class GStreamerWidget : SimpleAnnotatedWidget<GStreamerData>() {
             }
         }
         getSource().let {
-            if(it is GStreamerSource) {
+            if (it is GStreamerSource) {
                 uriField.value = it.asciiRepresentation()
             }
         }

@@ -1,7 +1,6 @@
 package data
 
 import edu.wpi.first.shuffleboard.api.data.ComplexDataType
-import javafx.scene.image.Image
 import java.awt.image.BufferedImage
 import java.util.function.Function
 
